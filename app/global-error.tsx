@@ -1,14 +1,19 @@
 /* eslint-disable no-restricted-exports */
 'use client'
 
-import * as Sentry from '@sentry/nextjs'
 import NextError from 'next/error.js'
 import { useEffect } from 'react'
 
 export default function GlobalError({ error }: { error: { digest?: string } & Error }) {
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-      Sentry.captureException(error)
+      const url = new URL(process.env.NEXT_PUBLIC_SENTRY_DSN)
+      const searchParams = new URLSearchParams({
+        dsn: url.searchParams.get('dsn') || '',
+        errorId: error.digest || '',
+      })
+      const sentryUrl = new URL(`?${searchParams.toString()}`, url.origin)
+      fetch(sentryUrl.toString(), { method: 'GET', keepalive: true })
     }
   }, [error])
 
@@ -25,3 +30,4 @@ export default function GlobalError({ error }: { error: { digest?: string } & Er
     </html>
   )
 }
+
